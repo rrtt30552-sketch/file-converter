@@ -17,6 +17,8 @@ from pathlib import Path
 
 def convert_image(input_path, output_path, quality=95):
     from PIL import Image
+    input_path = os.path.normpath(str(input_path))
+    output_path = os.path.normpath(str(output_path))
     img = Image.open(input_path)
     ext = Path(output_path).suffix.lower().lstrip(".")
     if ext in ("jpg", "jpeg") and img.mode in ("RGBA", "P", "LA"):
@@ -35,6 +37,7 @@ def images_to_pdf(input_paths, output_path):
     from PIL import Image
     images = []
     for p in input_paths:
+        p = str(p).replace("\\", "/")
         img = Image.open(p)
         if img.mode in ("RGBA", "P", "LA"):
             img = img.convert("RGB")
@@ -48,6 +51,8 @@ def images_to_pdf(input_paths, output_path):
 
 def pdf_to_images(input_path, output_dir, fmt="png", dpi=200):
     from pdf2image import convert_from_path
+    input_path = os.path.normpath(str(input_path))
+    output_dir = os.path.normpath(str(output_dir))
     os.makedirs(output_dir, exist_ok=True)
     images = convert_from_path(input_path, dpi=dpi, fmt=fmt)
     result = []
@@ -373,7 +378,8 @@ class FileConverterApp:
             files = [f] if f else []
 
         if files:
-            self.selected_files = list(files)
+            # 规范化路径，处理中文路径问题
+            self.selected_files = [os.path.normpath(str(f)) for f in files if f]
             self.file_listbox.delete(0, tk.END)
             for f in self.selected_files:
                 self.file_listbox.insert(tk.END, f)
@@ -419,7 +425,8 @@ class FileConverterApp:
 
     def _do_convert(self, conv, output):
         try:
-            ins = self.selected_files
+            ins = [os.path.normpath(str(f)) for f in self.selected_files]
+            output = os.path.normpath(str(output))
             ext = self.ext_var.get() if conv.get("ext_choices") else None
 
             if conv.get("output_is_dir"):
